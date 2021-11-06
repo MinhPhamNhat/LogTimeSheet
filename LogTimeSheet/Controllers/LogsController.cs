@@ -7,12 +7,15 @@ using System.Data.Entity.Validation;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Http.Results;
 using LogTimeSheet.Config;
 using LogTimeSheet.Models;
 using LogTimeSheet.Repo;
 using LogTimeSheet.Utils;
+using Newtonsoft.Json;
 
 namespace LogTimeSheet.Controllers
 {
@@ -47,7 +50,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetByUser()
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             return logDAO.getLogsByUser(UserId);
@@ -64,7 +67,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetByProject(int ProjectId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             return logDAO.getUserLogsByProject(UserId, ProjectId);
@@ -81,7 +84,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetBySubtask(int SubtaskId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             return logDAO.getUserLogsBySubtask(UserId, SubtaskId);
@@ -98,7 +101,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetByUser(string UserId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return logDAO.getLogsByUser(user, UserId);
         }
@@ -114,7 +117,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetAllByProject(int ProjectId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return logDAO.getAllLogsByProject(user, ProjectId);
         }
@@ -130,7 +133,7 @@ namespace LogTimeSheet.Controllers
         public List<Log> GetAllBySubtask(int SubtaskId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return logDAO.getAllLogsBySubtask(user, SubtaskId);
         }
@@ -147,13 +150,13 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult GetLog(int LogId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
 
             Log log = logDAO.getLog(user, LogId);
             if (log == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Log not found" });
             }
 
             return Ok(log);
@@ -170,7 +173,7 @@ namespace LogTimeSheet.Controllers
         [Route("api/Logs/{LogId}")]
         public IHttpActionResult PutLog(int LogId, [FromBody] dynamic log)
         {
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             int Role = Convert.ToInt32(user.role);
@@ -180,7 +183,7 @@ namespace LogTimeSheet.Controllers
             Log Log = logDAO.getLog(user, LogId);
             if (Log == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Log not found" });
             }
             try
             {
@@ -203,7 +206,7 @@ namespace LogTimeSheet.Controllers
                     s.Project.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == s.Project.ProjectId)) || s.Project.Type));
                     if (Subtask == null)
                     {
-                        return BadRequest("Subtask not found");
+                        return responseMessage(HttpStatusCode.NotFound, new { message = "Subtask not found" });
                     }
                     Log.Subtask = Subtask;
                 }
@@ -231,7 +234,7 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult ApproveLog(int LogId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
 
             string UserId = Convert.ToString(user.id);
@@ -240,7 +243,7 @@ namespace LogTimeSheet.Controllers
             Log log = logDAO.getLog(user, LogId);
             if (log == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Log not found" });
             }
             try
             {
@@ -252,18 +255,9 @@ namespace LogTimeSheet.Controllers
                 db.SaveChanges();
                 return Ok(log);
             }
-            catch (DbEntityValidationException e)
+            catch (Exception ex)
             {
-                string error = "";
-                foreach (var eve in e.EntityValidationErrors)
-                {
-                    error += "Entity of type \""+ eve.Entry.Entity.GetType().Name + "\" in state \""+ eve.Entry.State + "\" has the following validation errors:";
-                    foreach (var ve in eve.ValidationErrors)
-                    {
-                        error += "- Property: \""+ ve.PropertyName + "\", Error: \""+ ve.ErrorMessage + "\"";
-                    }
-                }
-                return Ok(new { message = error});
+                return InternalServerError(ex);
             }
 
         }
@@ -279,7 +273,7 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult DisapproveLog(int LogId)
         {
             logDAO = new LogDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
 
             string UserId = Convert.ToString(user.id);
@@ -288,7 +282,7 @@ namespace LogTimeSheet.Controllers
             Log log = logDAO.getLog(user, LogId);
             if (log == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Log not found" });
             }
             try
             {
@@ -318,7 +312,7 @@ namespace LogTimeSheet.Controllers
         [Route("api/Logs")]
         public IHttpActionResult PostLog(dynamic log)
         {
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             int Role = Convert.ToInt32(user.role);
@@ -330,7 +324,7 @@ namespace LogTimeSheet.Controllers
                 string.IsNullOrEmpty(Convert.ToString(log.SubtaskId)) ||
                 string.IsNullOrEmpty(Convert.ToString(log.DateLog)))
             {
-                return BadRequest("Invalid params");
+                return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid params" });
             }
 
             string Note = Convert.ToString(log.Note);
@@ -346,7 +340,7 @@ namespace LogTimeSheet.Controllers
                     s.Project.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == s.Project.ProjectId)) || s.Project.Type));
                 if (Subtask == null)
                 {
-                    return BadRequest("Subtask not found");
+                    return responseMessage(HttpStatusCode.NotFound, new { message = "Subtask not found" });
                 }
                 User User = db.Users.FirstOrDefault(u => u.UserId == UserId);
                 Log l = logDAO.addLog(new Log()
@@ -377,16 +371,26 @@ namespace LogTimeSheet.Controllers
         [HttpDelete]
         public IHttpActionResult DeleteLog(int LogsId)
         {
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             logDAO = new LogDAO(db);
             Log log = logDAO.deleteLog(user, LogsId);
             if (log == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Log not found" });
             }
 
             return Ok(log);
+        }
+
+        private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
+        {
+            string responseMessage = JsonConvert.SerializeObject(message);
+            ResponseMessageResult response = new ResponseMessageResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseMessage, Encoding.UTF8, "application/json")
+            });
+            return response;
         }
     }
 }

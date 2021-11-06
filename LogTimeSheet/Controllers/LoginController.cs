@@ -2,12 +2,15 @@
 using LogTimeSheet.Models;
 using LogTimeSheet.Repo;
 using LogTimeSheet.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http;
+using System.Web.Http.Results;
 
 namespace LogTimeSheet.Controllers
 {
@@ -41,18 +44,24 @@ namespace LogTimeSheet.Controllers
                     }
                     else
                     {
-                        return Ok(new
-                        {
-                            message = "Unidentified username or password"
-                        });
+                        return responseMessage(HttpStatusCode.Unauthorized, new { message = "Inidentify username or password" });
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     return InternalServerError(ex);
                 }
             }
-            return BadRequest();
+            return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid username or password"});
+        }
+        private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
+        {
+            string responseMessage = JsonConvert.SerializeObject(message);
+            ResponseMessageResult response = new ResponseMessageResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseMessage, Encoding.UTF8, "application/json")
+            });
+            return response;
         }
     }
 }

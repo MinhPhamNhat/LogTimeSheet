@@ -6,12 +6,15 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Http.Results;
 using LogTimeSheet.Config;
 using LogTimeSheet.Models;
 using LogTimeSheet.Repo;
 using LogTimeSheet.Utils;
+using Newtonsoft.Json;
 
 namespace LogTimeSheet.Controllers
 {
@@ -33,7 +36,7 @@ namespace LogTimeSheet.Controllers
         public List<Subtask> GetAll()
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return subtaskDAO.getList(user);
         }
@@ -50,7 +53,7 @@ namespace LogTimeSheet.Controllers
         public List<Subtask> GetByProject(int ProjectId)
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return subtaskDAO.getSubtaskByProject(user, ProjectId);
         }
@@ -67,12 +70,12 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult GetSubtask(int SubtaskId)
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             Subtask subtask = subtaskDAO.getSubtask(user, SubtaskId);
             if (subtask == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Subtask not found" });
             }
             return Ok(subtask);
         }
@@ -90,17 +93,17 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult PutSubtask(int SubtaskId, [FromBody] dynamic subtask)
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             int Role = Convert.ToInt32(user.role);
             Subtask Subtask = subtaskDAO.getSubtask(user, SubtaskId);
             if (Subtask == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Subtask not found" });
             }
             if (Subtask.Project.Type && Role!=0)
             {
-                return Ok(new { statusCode = 403, message = "You cannot modify this project (default project)" });
+                return responseMessage(HttpStatusCode.Forbidden, new { message = "You cannot modify this project (Default Project)!!!" });
             }
             try
             {
@@ -114,7 +117,7 @@ namespace LogTimeSheet.Controllers
                     Project Project = db.Projects.FirstOrDefault(p => p.ProjectId == ProjectId);
                     if (Project == null)
                     {
-                        return BadRequest("Project not found");
+                        return responseMessage(HttpStatusCode.NotFound, new { message = "Project not found" });
                     }
                     Subtask.Project = Project;
                 }
@@ -141,7 +144,7 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult PostSubtask([FromBody] dynamic subtask)
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             string UserId = Convert.ToString(user.id);
             int Role = Convert.ToInt32(user.role);
@@ -149,7 +152,7 @@ namespace LogTimeSheet.Controllers
             if (string.IsNullOrEmpty(Convert.ToString(subtask.Name)) ||
                 string.IsNullOrEmpty(Convert.ToString(subtask.ProjectId)))
             {
-                return BadRequest("Invalid params");
+                return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid params" });
             }
 
             string Name = Convert.ToString(subtask.Name);
@@ -161,11 +164,11 @@ namespace LogTimeSheet.Controllers
                 Project Project = db.Projects.FirstOrDefault(p => p.ProjectId == ProjectId && (p.ProjectUsers.Contains(p.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == ProjectId)) || p.Type));
                 if (Project == null)
                 {
-                    return BadRequest("Project not found");
+                    return responseMessage(HttpStatusCode.NotFound, new { message = "Project not found" });
                 }
                 if (Project.Type && Role != 0)
                 {
-                    return Ok(new { statusCode = 403, message = "You cannot modify this project (default project)" });
+                    return responseMessage(HttpStatusCode.Forbidden, new { message = "You cannot modify this project (Default Project)!!!" });
                 }
                 Subtask s = subtaskDAO.addSubtask(new Subtask()
                 {
@@ -191,14 +194,23 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult DeleteSubtask(int SubtaskId)
         {
             subtaskDAO = new SubtaskDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             Subtask subtask = subtaskDAO.deleteSubtask(user, SubtaskId);
             if (subtask == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Subtask not found" });
             }
             return Ok(subtask);
+        }
+        private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
+        {
+            string responseMessage = JsonConvert.SerializeObject(message);
+            ResponseMessageResult response = new ResponseMessageResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseMessage, Encoding.UTF8, "application/json")
+            });
+            return response;
         }
     }
 }

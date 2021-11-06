@@ -6,12 +6,16 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Web.Helpers;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Http.Results;
 using LogTimeSheet.Config;
 using LogTimeSheet.Models;
 using LogTimeSheet.Repo;
 using LogTimeSheet.Utils;
+using Newtonsoft.Json;
 
 namespace LogTimeSheet.Controllers
 {
@@ -32,7 +36,7 @@ namespace LogTimeSheet.Controllers
         public List<Project> Getprojects()
         {
             projectDAO = new ProjectDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             return projectDAO.getProjectList(Convert.ToString(user.id));
         }
@@ -48,12 +52,15 @@ namespace LogTimeSheet.Controllers
         public IHttpActionResult GetProject(int ProjectId)
         {
             projectDAO = new ProjectDAO(db);
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             Project project = projectDAO.getProject(ProjectId, Convert.ToString(user.id));
             if (project == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new
+                {
+                    message = "Project not found"
+                });
             }
             return Ok(project);
         }
@@ -72,15 +79,14 @@ namespace LogTimeSheet.Controllers
         {
             projectDAO = new ProjectDAO(db);
 
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
 
             Project oldProject = projectDAO.getProject(ProjectId, Convert.ToString(user.id));
 
             if (oldProject == null)
             {
-
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { message = "Project not found" });
             }
             try
             {
@@ -93,7 +99,7 @@ namespace LogTimeSheet.Controllers
                     DateTime StartDate = Convert.ToDateTime(Convert.ToString(project.StartDate));
                     if (DateTime.Compare(StartDate, oldProject.EndDate) >= 0)
                     {
-                        return BadRequest(StartDate.ToLocalTime() + " Start day must be sooner than the OLD end day " + oldProject.EndDate.ToLocalTime());
+                        return responseMessage(HttpStatusCode.BadRequest, new { message = (StartDate.ToLocalTime() + " Start day must be sooner than the OLD end day " + oldProject.EndDate.ToLocalTime()) });
                     }
                     oldProject.StartDate = StartDate;
                 }
@@ -102,7 +108,7 @@ namespace LogTimeSheet.Controllers
                     DateTime EndDate = Convert.ToDateTime(Convert.ToString(project.EndDate));
                     if (DateTime.Compare(oldProject.StartDate, EndDate) >= 0)
                     {
-                        return BadRequest(oldProject.StartDate.ToLocalTime() + " Start day must be sooner than the end day " + EndDate.ToLocalTime());
+                        return responseMessage(HttpStatusCode.BadRequest, new { message = (oldProject.StartDate.ToLocalTime() + " Start day must be sooner than the end day " + EndDate.ToLocalTime()) });
                     }
                     oldProject.EndDate = EndDate;
                 }
@@ -127,13 +133,13 @@ namespace LogTimeSheet.Controllers
                 {
                     if (oldProject.Type)
                     {
-                        return BadRequest("Type true (Default project) must not has Manager!!!");
+                        return responseMessage(HttpStatusCode.BadRequest, new { message = "Type true (Default project) must not has Manager!!!" });
                     }
                     string ManagerId = Convert.ToString(project.Manager);
                     User Manager = db.Users.FirstOrDefault(u => u.UserId == ManagerId);
                     if (Manager == null)
                     {
-                        return BadRequest("Manager not found");
+                        return responseMessage(HttpStatusCode.NotFound, new { message = "Manager not found" });
                     }
                     if (oldProject.Manager != null)
                     {
@@ -174,7 +180,7 @@ namespace LogTimeSheet.Controllers
                 string.IsNullOrEmpty(Convert.ToString(project.Type)) ||
                 string.IsNullOrEmpty(Convert.ToString(project.ProjectCode)))
             {
-                return BadRequest("Invalid params");
+                return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid params" });
             }
             string Name = Convert.ToString(project.Name);
             DateTime InitTime = DateTime.Now;
@@ -185,14 +191,14 @@ namespace LogTimeSheet.Controllers
 
                 if (Type && !string.IsNullOrEmpty(Convert.ToString(project.Manager)))
                 {
-                    return BadRequest("Type true (Default project) must not has Manager!!!");
+                    return responseMessage(HttpStatusCode.BadRequest, new { message = "Type true (Default project) must not has Manager!!!" });
                 }
                 //  "1/1/2010 12:10:15 PM"
                 DateTime StartDate = Convert.ToDateTime(Convert.ToString(project.StartDate));
                 DateTime EndDate = Convert.ToDateTime(Convert.ToString(project.EndDate));
                 if (DateTime.Compare(StartDate, EndDate) >= 0)
                 {
-                    return BadRequest(StartDate.ToLocalTime() + " End day must be greater than start day " + EndDate.ToLocalTime());
+                    return responseMessage(HttpStatusCode.BadRequest, new { message = (StartDate.ToLocalTime() + " End day must be greater than start day " + EndDate.ToLocalTime()) });
                 }
 
                 User ADMIN = db.Users.FirstOrDefault(u => u.UserId == "ADMIN");
@@ -203,7 +209,7 @@ namespace LogTimeSheet.Controllers
                     Manager = db.Users.FirstOrDefault(u => u.UserId == ManagerId);
                     if (Manager == null)
                     {
-                        return BadRequest("Manager not found");
+                        return responseMessage(HttpStatusCode.NotFound, new { message = "Manager not found" });
                     }
                 }
 
@@ -253,7 +259,7 @@ namespace LogTimeSheet.Controllers
         {
             projectDAO = new ProjectDAO(db);
 
-            var token = Request.Headers.GetValues("token").First();
+            var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
 
             Project Project = projectDAO.getProject(ProjectId, Convert.ToString(user.id));
@@ -262,19 +268,19 @@ namespace LogTimeSheet.Controllers
             {
                 if (Project.Type)
                 {
-                    return Ok(new { statusCode = 403, message = "You cannot modify this project (default project)" });
+                    return responseMessage(HttpStatusCode.Forbidden, new { message = "You cannot modify this project (default project)" });
                 }
                 try
                 {
                     string UserId = Convert.ToString(staff.UserId);
                     if (string.IsNullOrEmpty(UserId))
                     {
-                        return BadRequest("Invalid params");
+                        return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid params" });
                     }
                     User User = db.Users.FirstOrDefault(u => u.UserId == UserId);
                     if (User == null)
                     {
-                        return BadRequest("Staff not found");
+                        return responseMessage(HttpStatusCode.NotFound, new { message = "Staff not found" });
                     }
                     Project.ProjectUsers.Add(new ProjectUser() { Project = Project, User = User });
                     db.SaveChanges();
@@ -285,7 +291,10 @@ namespace LogTimeSheet.Controllers
                     return InternalServerError(ex);
                 }
             }
-            return NotFound();
+            return responseMessage(HttpStatusCode.NotFound, new
+            {
+                message = "Project not found"
+            });
         }
 
         // DELETE: api/Projects/5 -- PASS
@@ -301,13 +310,25 @@ namespace LogTimeSheet.Controllers
             Project project = db.Projects.Find(ProjectId);
             if (project == null)
             {
-                return NotFound();
+                return responseMessage(HttpStatusCode.NotFound, new { 
+                    message = "Project not found"
+                });
             }
 
             db.Projects.Remove(project);
             db.SaveChanges();
 
             return Ok(project);
+        }
+
+        private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
+        {
+            string responseMessage = JsonConvert.SerializeObject(message);
+            ResponseMessageResult response = new ResponseMessageResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseMessage, Encoding.UTF8, "application/json")
+            });
+            return response;
         }
     }
 }

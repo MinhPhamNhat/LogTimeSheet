@@ -27,53 +27,61 @@ namespace LogTimeSheet.Config
         public override void OnAuthorization(HttpActionContext actionContext)
         {
             authorize = false;
-            if (actionContext.Request.Headers.Contains("token"))
+            try
             {
-                var token = actionContext.Request.Headers.GetValues("token").First();
-                dynamic user = jwtValidator.ValidateToken(token);
-                if (user != null)
+                if (actionContext.Request.Headers.Authorization.Scheme.Contains("Bearer"))
                 {
-                    foreach (var role in roles)
+                    var token = actionContext.Request.Headers.Authorization.Parameter;
+                    dynamic user = jwtValidator.ValidateToken(token);
+                    if (user != null)
                     {
-                        if (role.Equals("Admin"))
+                        foreach (var role in roles)
                         {
-                            if (Convert.ToUInt32(user.role) == 0)
+                            if (role.Equals("Admin"))
+                            {
+                                if (Convert.ToUInt32(user.role) == 0)
+                                {
+                                    authorize = true;
+                                    return;
+                                }
+                            }
+                            else if (role.Equals("PM"))
+                            {
+                                if (Convert.ToUInt32(user.role) == 1)
+                                {
+                                    authorize = true;
+                                    return;
+                                }
+                            }
+                            else if (role.Equals("Staff"))
+                            {
+                                if (Convert.ToUInt32(user.role) == 2)
+                                {
+                                    authorize = true;
+                                    return;
+                                }
+                            }
+                            else if (role.Equals("All"))
                             {
                                 authorize = true;
                                 return;
                             }
                         }
-                        else if (role.Equals("PM"))
-                        {
-                            if (Convert.ToUInt32(user.role) == 1)
-                            {
-                                authorize = true;
-                                return;
-                            }
-                        }
-                        else if (role.Equals("Staff"))
-                        {
-                            if (Convert.ToUInt32(user.role) == 2)
-                            {
-                                authorize = true;
-                                return;
-                            }
-                        }
-                        else if (role.Equals("All"))
-                        {
-                            authorize = true;
-                            return;
-                        }
+                        message = "{\"code\":1, \"message\":\" You dont have permission to access this resource\"}";
+                        statusCode = HttpStatusCode.Forbidden;
+                        HandleUnauthorizedRequest(actionContext);
+                        return;
                     }
-                    message = "{\"code\":1, \"message\":\" You dont have permission to access this resource\"}";
-                    statusCode = HttpStatusCode.Forbidden;
-                    HandleUnauthorizedRequest(actionContext);
-                    return;
                 }
+                statusCode = HttpStatusCode.Unauthorized;
+                message = "{\"code\":0, \"message\":\"Your indentity is not authorized\"}";
+                HandleUnauthorizedRequest(actionContext);
+            }catch(Exception ex)
+            {
+                statusCode = HttpStatusCode.InternalServerError;
+                message = ex.ToString();
+                HandleUnauthorizedRequest(actionContext);
             }
-            statusCode = HttpStatusCode.Unauthorized;
-            message = "{\"code\":0, \"message\":\"Your indentity is not authorized\"}";
-            HandleUnauthorizedRequest(actionContext);
         }
         protected override Boolean IsAuthorized(HttpActionContext actionContext)
         {
