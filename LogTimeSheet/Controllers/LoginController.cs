@@ -40,7 +40,7 @@ namespace LogTimeSheet.Controllers
                     if (authenticatedUser != null)
                     {
                         string token = jwtValidator.GenerateToken(authenticatedUser);
-                        return Ok(new { token });
+                        return Ok(new { token, user = authenticatedUser });
                     }
                     else
                     {

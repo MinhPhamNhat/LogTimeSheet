@@ -34,6 +34,7 @@ namespace LogTimeSheet.Models
         public string Username { get; set; }
 
         [DisplayName("Password")]
+        [JsonIgnore]
         [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; }
 
