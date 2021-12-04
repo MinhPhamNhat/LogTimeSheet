@@ -11,11 +11,13 @@ using System.Security.Claims;
 using System.Text;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Http.Results;
 using LogTimeSheet.Config;
 using LogTimeSheet.Models;
 using LogTimeSheet.Repo;
 using LogTimeSheet.Utils;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 
 namespace LogTimeSheet.Controllers
 {
@@ -63,10 +65,27 @@ namespace LogTimeSheet.Controllers
         {
             if (string.IsNullOrEmpty(UserId))
             {
-                return BadRequest();
+                return responseMessage(HttpStatusCode.BadRequest, new { message = "Invalid param" });
             }
-            userDAO = new UserDAO(db);
-            return Ok(userDAO.getUser(UserId));
+            else
+            {
+                userDAO = new UserDAO(db);
+                User user =userDAO.getUser(UserId);
+                if (user != null)
+                {
+                    return Ok(user);
+                }
+                return responseMessage(HttpStatusCode.NotFound, new { message = "User not found" });
+            }
+        }
+        private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
+        {
+            string responseMessage = JsonConvert.SerializeObject(message);
+            ResponseMessageResult response = new ResponseMessageResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseMessage, Encoding.UTF8, "application/json")
+            });
+            return response;
         }
     }
 }

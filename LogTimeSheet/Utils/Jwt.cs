@@ -25,7 +25,8 @@ namespace LogTimeSheet.Utils
             var key = Encoding.ASCII.GetBytes(secretKey);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) ,
+                Subject = new ClaimsIdentity(new[] { 
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) ,
                     new Claim("username", user.Username),
                     new Claim("role", user.Role.ToString()),
                     new Claim("id", user.UserId),

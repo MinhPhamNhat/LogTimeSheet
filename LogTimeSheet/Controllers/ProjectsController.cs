@@ -155,7 +155,7 @@ namespace LogTimeSheet.Controllers
             }
             catch (Exception ex)
             {
-                return InternalServerError(ex);
+                return responseMessage(HttpStatusCode.InternalServerError, new { message = ex.ToString() });
             }
             
         }
@@ -241,7 +241,7 @@ namespace LogTimeSheet.Controllers
             }
             catch (Exception ex)
             {
-                return InternalServerError(ex);
+                return responseMessage(HttpStatusCode.InternalServerError, new { message = ex.ToString() });
             }
         }
 
@@ -320,6 +320,8 @@ namespace LogTimeSheet.Controllers
 
             return Ok(project);
         }
+
+
 
         private ResponseMessageResult responseMessage(HttpStatusCode statusCode, object message)
         {
