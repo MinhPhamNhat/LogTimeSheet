@@ -126,7 +126,7 @@ namespace LogTimeSheet.Controllers
             }
             catch (Exception ex)
             {
-                return InternalServerError(ex);
+                return responseMessage(HttpStatusCode.InternalServerError, new { message = ex.ToString() });
             }
 
         }
@@ -175,11 +175,11 @@ namespace LogTimeSheet.Controllers
                     Name = Name,
                     Project = Project
                 });
-                return Ok(s);
+                return Content(HttpStatusCode.Created, s);
             }
             catch (Exception ex)
             {
-                return InternalServerError(ex);
+                return responseMessage(HttpStatusCode.InternalServerError, new { message = ex.ToString() });
             }
         }
 

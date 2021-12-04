@@ -353,7 +353,7 @@ namespace LogTimeSheet.Controllers
                     Subtask = Subtask,
                     User = User
                 });
-                return Ok(l);
+                return Content(HttpStatusCode.Created, l);
             }
             catch (Exception ex)
             {

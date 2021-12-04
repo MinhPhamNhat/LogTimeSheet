@@ -170,7 +170,7 @@ namespace LogTimeSheet.Controllers
         /// </summary>
         [AuthorizeRequest("Admin")]
         [Route("api/Projects")]
-        [ResponseType(typeof(Project))]
+        [HttpPost]
         public IHttpActionResult PostProject([FromBody] dynamic project)
         {
             projectDAO = new ProjectDAO(db);
@@ -236,8 +236,9 @@ namespace LogTimeSheet.Controllers
                         new ProjectUser() { User = ADMIN, Project = pro }
                     };
                 }
-                db.SaveChanges();
-                return Ok(pro);
+
+                db.SaveChanges(); 
+                return Content(HttpStatusCode.Created, pro);
             }
             catch (Exception ex)
             {
