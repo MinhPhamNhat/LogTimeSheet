@@ -24,11 +24,24 @@ namespace LogTimeSheet.Config
         {
             this.roles = roles;
         }
+
+        private void SetHttpResponseContent(HttpStatusCode status, int code, string msg, HttpActionContext actionContext)
+        {
+            statusCode = status;
+            message = "{\"code\":" + code + ", \"message\":\"" + msg + "\"}";
+            HandleUnauthorizedRequest(actionContext);
+        }
+
         public override void OnAuthorization(HttpActionContext actionContext)
         {
             authorize = false;
             try
             {
+                if (actionContext.Request.Headers.Authorization == null)
+                {
+                    SetHttpResponseContent(HttpStatusCode.Unauthorized, 0, "Your indentity is not authorized", actionContext);
+                    return;
+                }
                 if (actionContext.Request.Headers.Authorization.Scheme.Contains("Bearer"))
                 {
                     var token = actionContext.Request.Headers.Authorization.Parameter;
@@ -67,20 +80,15 @@ namespace LogTimeSheet.Config
                                 return;
                             }
                         }
-                        message = "{\"code\":1, \"message\":\" You dont have permission to access this resource\"}";
-                        statusCode = HttpStatusCode.Forbidden;
-                        HandleUnauthorizedRequest(actionContext);
+                        SetHttpResponseContent(HttpStatusCode.Forbidden, 1, "You dont have permission to access this resource", actionContext);
                         return;
                     }
                 }
-                statusCode = HttpStatusCode.Unauthorized;
-                message = "{\"code\":0, \"message\":\"Your indentity is not authorized\"}";
-                HandleUnauthorizedRequest(actionContext);
-            }catch(Exception ex)
+                SetHttpResponseContent(HttpStatusCode.Unauthorized, 0, "Your indentity is not authorized", actionContext);
+            }
+            catch (Exception ex)
             {
-                statusCode = HttpStatusCode.InternalServerError;
-                message = ex.ToString();
-                HandleUnauthorizedRequest(actionContext);
+                SetHttpResponseContent(HttpStatusCode.InternalServerError, -1, ex.ToString(), actionContext);
             }
         }
         protected override Boolean IsAuthorized(HttpActionContext actionContext)
