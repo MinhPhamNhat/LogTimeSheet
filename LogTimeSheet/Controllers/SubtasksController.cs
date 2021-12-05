@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.Http.Description;
 using System.Web.Http.Results;
 using LogTimeSheet.Config;
@@ -18,6 +19,7 @@ using Newtonsoft.Json;
 
 namespace LogTimeSheet.Controllers
 {
+    [EnableCors(origins: "http://localhost:3000", headers: "*", methods: "*")]
     public class SubtasksController : ApiController
     {
         private SystemContext db = new SystemContext();
