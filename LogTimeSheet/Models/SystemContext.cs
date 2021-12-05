@@ -8,7 +8,7 @@ namespace LogTimeSheet.Models
 {
     public class SystemContext : DbContext
     {
-        public SystemContext() : base("Data Source=MinhPham;Initial Catalog=LogTimeSheet;Integrated Security=True") { }
+        public SystemContext() : base("Data Source=103.151.241.83;Initial Catalog=LogTimeSheet;User ID=sa;Password=Sa@123456;") { }
         public DbSet<User> Users { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<Project> Projects { get; set; }
