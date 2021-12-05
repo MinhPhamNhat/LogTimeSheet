@@ -185,6 +185,7 @@
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\LogsController.cs" />
     <Compile Include="Controllers\ProjectsController.cs" />
+    <Compile Include="Controllers\StatisticController.cs" />
     <Compile Include="Controllers\SubtasksController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Global.asax.cs">
@@ -209,6 +210,7 @@
     <Compile Include="Repo\LogDAO.cs" />
     <Compile Include="Repo\Login.cs" />
     <Compile Include="Repo\ProjectDAO.cs" />
+    <Compile Include="Repo\StatisticDAO.cs" />
     <Compile Include="Repo\SubtaskDAO.cs" />
     <Compile Include="Repo\UserDAO.cs" />
     <Compile Include="Utils\Jwt.cs" />
