@@ -189,6 +189,12 @@ namespace LogTimeSheet.Controllers
             string ProjectCode = Convert.ToString(project.ProjectCode);
             try
             {
+                Project proCodeCheck = db.Projects.FirstOrDefault(p => p.ProjectCode == ProjectCode);
+                if (proCodeCheck != null)
+                {
+                    return responseMessage(HttpStatusCode.BadRequest, new { message = "Project Code exists" });
+                }
+
                 bool Type = Convert.ToBoolean(project.Type);
 
                 if (Type && !string.IsNullOrEmpty(Convert.ToString(project.Manager)))
