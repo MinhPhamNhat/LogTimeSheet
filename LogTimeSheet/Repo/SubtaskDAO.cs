@@ -20,10 +20,11 @@ namespace LogTimeSheet.Repo
             return db.Subtasks.Where(s => s.Project.ProjectId == ProjectId && (s.Project.ProjectUsers.Contains(s.Project.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == ProjectId)) || s.Project.Type)).ToList();
         }
 
-        public List<Subtask> getList(dynamic user)
+        public List<Subtask> getList(dynamic user, int page, int limit)
         {
             string UserId = Convert.ToString(user.id);
-            return db.Subtasks.Where(s => s.Project.ProjectUsers.Contains(s.Project.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == s.Project.ProjectId)) || s.Project.Type).ToList();
+            int role = Convert.ToInt32(user.role);
+            return db.Subtasks.Where(s => s.Project.ProjectUsers.Contains(s.Project.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == s.Project.ProjectId)) || s.Project.Type).OrderByDescending(p => p.Name).Skip(limit * (page - 1)).Take(limit).ToList().ToList();
         }
 
         public Subtask getSubtask(dynamic user, int SubtaskId)

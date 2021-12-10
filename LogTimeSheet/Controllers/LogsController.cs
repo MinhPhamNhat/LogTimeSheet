@@ -35,12 +35,12 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("Admin")]
         [HttpGet]
         [Route("api/Logs")]
-        public List<Log> GetAll()
+        public List<Log> GetAll(int page = 1, int limit = 10)
         {
             var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
             logDAO = new LogDAO(db);
-            return logDAO.getAll(user);
+            return logDAO.getAll(user, page, limit);
         }
 
         // GET: api/Logs/AllByUser/5

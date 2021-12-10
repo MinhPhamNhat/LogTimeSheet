@@ -14,22 +14,22 @@ namespace LogTimeSheet.Repo
             this.db = db;
         }
 
-        public List<Log> getAll(dynamic user)
+        public List<Log> getAll(dynamic user, int page, int limit)
         {
-            int role = int.Parse(user.role);
+            int role = Convert.ToInt32(user.role);
             if (role == 0)
             {
-                return db.Logs.ToList();
+                return db.Logs.OrderByDescending(p => p.InitTime).Skip(limit * (page - 1)).Take(limit).ToList();
             }
             else if (role == 1)
             {
                 string manager = Convert.ToString(user.id);
-                return db.Logs.Where(l => l.Subtask.Project.Manager.UserId.Equals(manager)).ToList();
+                return db.Logs.Where(l => l.Subtask.Project.Manager.UserId.Equals(manager)).OrderByDescending(p => p.InitTime).Skip(limit * (page - 1)).Take(limit).ToList();
             }
             else
             {
                 string staff = Convert.ToString(user.id);
-                return db.Logs.Where(l => l.User.UserId.Equals(staff)).ToList();
+                return db.Logs.Where(l => l.User.UserId.Equals(staff)).OrderByDescending(p => p.InitTime).Skip(limit * (page - 1)).Take(limit).ToList();
             }
         }
 

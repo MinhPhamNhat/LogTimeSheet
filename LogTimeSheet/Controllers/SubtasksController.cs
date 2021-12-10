@@ -35,12 +35,12 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("All")]
         [HttpGet]
         [Route("api/Subtasks")]
-        public List<Subtask> GetAll()
+        public List<Subtask> GetAll(int page = 1, int limit = 10)
         {
             subtaskDAO = new SubtaskDAO(db);
             var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
-            return subtaskDAO.getList(user);
+            return subtaskDAO.getList(user, page, limit);
         }
 
         // GET: api/getByProject/5 -- PASS
