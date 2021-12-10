@@ -19,9 +19,9 @@ namespace LogTimeSheet.Repo
             return db.Projects.FirstOrDefault(p => p.ProjectId == ProjectId && (p.ProjectUsers.Contains(p.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == ProjectId)) || p.Type));
         }
 
-        public List<Project> getProjectList(string UserId)
+        public List<Project> getProjectList(string UserId, int page, int limit)
         {
-            return db.Projects.Where(p => p.ProjectUsers.Contains(p.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == p.ProjectId)) || p.Type).ToList();
+            return db.Projects.Where(p => p.ProjectUsers.Contains(p.ProjectUsers.FirstOrDefault(_ => _.UserId == UserId && _.ProjectId == p.ProjectId)) || p.Type).OrderByDescending(p => p.InitTime).Skip(limit * (page - 1)).Take(limit).ToList();
         }
 
         public Project addProject(Project project)
@@ -30,7 +30,5 @@ namespace LogTimeSheet.Repo
             db.SaveChanges();
             return project;
         }
-
-
     }
 }

@@ -37,8 +37,10 @@ namespace LogTimeSheet.Controllers
         [Route("api/Logs")]
         public List<Log> GetAll()
         {
+            var token = Request.Headers.Authorization.Parameter;
+            dynamic user = jwtValidator.ValidateToken(token);
             logDAO = new LogDAO(db);
-            return logDAO.getAll();
+            return logDAO.getAll(user);
         }
 
         // GET: api/Logs/AllByUser/5
@@ -254,6 +256,7 @@ namespace LogTimeSheet.Controllers
                 log.IsApproved = true;
                 log.UserApproved = User;
                 log.DateApproved = DateTime.Now;
+                Console.WriteLine(log.IsApproved);
                 db.SaveChanges();
                 return Ok(log);
             }

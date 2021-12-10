@@ -33,7 +33,7 @@ namespace LogTimeSheet.Utils
                     new Claim("name", user.Name)
                 }),
                 // generate token that is valid for 5 minute
-                Expires = DateTime.UtcNow.AddMinutes(5),
+                Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);

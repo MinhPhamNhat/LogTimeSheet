@@ -27,7 +27,7 @@ namespace LogTimeSheet.Controllers
         private SystemContext db = new SystemContext();
         private ProjectDAO projectDAO;
 
-        // GET: api/Projects -- PASS
+        // GET: api/Projects?page=1&limit=20 -- PASS
         /// <summary>
         /// - Role: Tất cả
         /// - Desc: Lấy tất cả project 
@@ -35,12 +35,12 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("All")]
         [Route("api/Projects")]
         [HttpGet]
-        public List<Project> Getprojects()
+        public List<Project> Getprojects(int page = 1, int limit = 10)
         {
             projectDAO = new ProjectDAO(db);
             var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);
-            return projectDAO.getProjectList(Convert.ToString(user.id));
+            return projectDAO.getProjectList(Convert.ToString(user.id), page, limit);
         }
 
         // GET: api/Projects/5 -- PASS

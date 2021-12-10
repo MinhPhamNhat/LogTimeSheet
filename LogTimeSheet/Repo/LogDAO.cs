@@ -14,9 +14,23 @@ namespace LogTimeSheet.Repo
             this.db = db;
         }
 
-        public List<Log> getAll()
+        public List<Log> getAll(dynamic user)
         {
-            return db.Logs.ToList();
+            int role = int.Parse(user.role);
+            if (role == 0)
+            {
+                return db.Logs.ToList();
+            }
+            else if (role == 1)
+            {
+                string manager = Convert.ToString(user.id);
+                return db.Logs.Where(l => l.Subtask.Project.Manager.UserId.Equals(manager)).ToList();
+            }
+            else
+            {
+                string staff = Convert.ToString(user.id);
+                return db.Logs.Where(l => l.User.UserId.Equals(staff)).ToList();
+            }
         }
 
         public List<Log> getLogsByUser(string UserId)
