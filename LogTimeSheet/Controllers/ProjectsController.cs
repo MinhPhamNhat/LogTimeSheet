@@ -92,6 +92,9 @@ namespace LogTimeSheet.Controllers
             }
             try
             {
+                db.ProjectUsers.RemoveRange(db.ProjectUsers.Where(pu => pu.ProjectId == oldProject.ProjectId));
+                oldProject.ProjectUsers.Add(new ProjectUser() { UserId = "ADMIN", ProjectId = oldProject.ProjectId });
+                db.SaveChanges();
                 if (!string.IsNullOrEmpty(Convert.ToString(project.Name)))
                 {
                     oldProject.Name = Convert.ToString(project.Name);
@@ -151,7 +154,10 @@ namespace LogTimeSheet.Controllers
                     oldProject.ProjectUsers.Add(new ProjectUser() { ProjectId = oldProject.ProjectId, UserId = Manager.UserId });
                     oldProject.Manager = Manager;
                 }
-
+                foreach (var s in project.Staff)
+                {
+                    oldProject.ProjectUsers.Add(new ProjectUser() { UserId = s, ProjectId = oldProject.ProjectId });
+                }
                 db.SaveChanges();
                 return Ok(oldProject);
             }
@@ -243,6 +249,10 @@ namespace LogTimeSheet.Controllers
                     pro.ProjectUsers = new List<ProjectUser>() {
                         new ProjectUser() { User = ADMIN, Project = pro }
                     };
+                }
+                foreach (var s in project.Staff)
+                {
+                    pro.ProjectUsers.Add(new ProjectUser() { UserId = s, ProjectId = pro.ProjectId });
                 }
 
                 db.SaveChanges(); 
