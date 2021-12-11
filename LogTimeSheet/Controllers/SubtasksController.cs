@@ -35,7 +35,7 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("All")]
         [HttpGet]
         [Route("api/Subtasks")]
-        public List<Subtask> GetAll(int page = 1, int limit = 10)
+        public List<Subtask> GetAll(int page = 1, int limit = 100)
         {
             subtaskDAO = new SubtaskDAO(db);
             var token = Request.Headers.Authorization.Parameter;

@@ -35,7 +35,7 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("Admin")]
         [HttpGet]
         [Route("api/Logs")]
-        public List<Log> GetAll(int page = 1, int limit = 10)
+        public List<Log> GetAll(int page = 1, int limit = 100)
         {
             var token = Request.Headers.Authorization.Parameter;
             dynamic user = jwtValidator.ValidateToken(token);

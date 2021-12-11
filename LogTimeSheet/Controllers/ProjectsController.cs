@@ -35,7 +35,7 @@ namespace LogTimeSheet.Controllers
         [AuthorizeRequest("All")]
         [Route("api/Projects")]
         [HttpGet]
-        public List<Project> Getprojects(int page = 1, int limit = 10)
+        public List<Project> Getprojects(int page = 1, int limit = 100)
         {
             projectDAO = new ProjectDAO(db);
             var token = Request.Headers.Authorization.Parameter;
