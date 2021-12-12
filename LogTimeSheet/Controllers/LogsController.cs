@@ -29,10 +29,10 @@ namespace LogTimeSheet.Controllers
 
         // GET: api/Logs
         /// <summary>
-        /// - Role: Admin
+        /// - Role: Tất cả
         /// - Desc: Lấy tất cả Log
         /// </summary>
-        [AuthorizeRequest("Admin")]
+        [AuthorizeRequest("All")]
         [HttpGet]
         [Route("api/Logs")]
         public List<Log> GetAll(int page = 1, int limit = 100)
